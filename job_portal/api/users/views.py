@@ -5,8 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.models import ApplicantProfile
-from .serializers import UserRegisterSerializer, ApplicantProfileSerializer
+from users.models import ApplicantProfile, EmployerProfile
+from .serializers import (
+    EmployerProfileSerializer,
+    UserRegisterSerializer,
+    ApplicantProfileSerializer,
+)
 
 
 # Create your views here.
@@ -75,7 +79,15 @@ class ApplicantProfileView(APIView):
 
     def get(self, request):
         try:
-            applicant_profile = ApplicantProfile.objects.get(user=request.user)
+            applicant_profile = ApplicantProfile.objects.filter(
+                user=request.user
+            ).first()
+            if not applicant_profile:
+                return JsonResponse(
+                    {"error": "An Applicant profile not exists for this user."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             serializer = ApplicantProfileSerializer(applicant_profile)
             return JsonResponse(
                 {
@@ -89,7 +101,14 @@ class ApplicantProfileView(APIView):
 
     def put(self, request):
         try:
-            applicant_profile = ApplicantProfile.objects.get(user=request.user)
+            applicant_profile = ApplicantProfile.objects.filter(
+                user=request.user
+            ).first()
+            if not applicant_profile:
+                return JsonResponse(
+                    {"error": "An Applicant profile not exists"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             serializer = ApplicantProfileSerializer(
                 applicant_profile, request.data, partial=True
             )
@@ -97,6 +116,81 @@ class ApplicantProfileView(APIView):
                 serializer.save()
                 return JsonResponse(
                     {"message": "Applicant Profile Updated Successfully!"},
+                    status=status.HTTP_201_CREATED,
+                )
+            return JsonResponse(
+                {"error": str(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmployerProfileView(APIView):
+    """Applicant Profile"""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
+            if employer_profile:
+                return JsonResponse(
+                    {"error": "An employer profile already exists for this user."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer = EmployerProfileSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return JsonResponse(
+                    {"message": "Employer Profile Created Successfully!"},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return JsonResponse(
+                    {"error": str(serializer.errors)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        try:
+            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
+            if not employer_profile:
+                return JsonResponse(
+                    {"error": "An Employer profile not exists for this user."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer = EmployerProfileSerializer(employer_profile)
+            return JsonResponse(
+                {
+                    "data": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        try:
+            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
+            if not employer_profile:
+                return JsonResponse(
+                    {"error": "An Employer profile not exists"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer = EmployerProfileSerializer(
+                employer_profile, request.data, partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(
+                    {"message": "Employer Profile Updated Successfully!"},
                     status=status.HTTP_201_CREATED,
                 )
             return JsonResponse(
