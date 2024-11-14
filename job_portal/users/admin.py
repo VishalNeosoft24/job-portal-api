@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, ApplicantProfile, Skill
+from .models import User, ApplicantProfile, Skill, EmployerProfile
 
 # Register your models here.
 
@@ -22,12 +22,27 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(ApplicantProfile)
 class ApplicantProfileAdmin(admin.ModelAdmin):
     list_display = [
+        "id",
         "user",
         "phone_number",
         "address",
         "resume_file",
         "profile_complete",
     ]
+    search_fields = ["phone_number"]
+
+
+@admin.register(EmployerProfile)
+class EmployerProfileAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "user",
+        "company_name",
+        "company_website",
+        "location",
+    ]
+    list_filter = ["location"]
+    search_fields = ["company_name", "location"]
 
 
 @admin.register(Skill)
