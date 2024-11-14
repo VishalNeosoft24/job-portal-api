@@ -1,9 +1,12 @@
 from django.http import JsonResponse
 from rest_framework.views import APIView
-from rest_framework import permissions, status
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserRegisterSerializer
+
+from users.models import ApplicantProfile
+from .serializers import UserRegisterSerializer, ApplicantProfileSerializer
 
 
 # Create your views here.
@@ -30,16 +33,76 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
             return JsonResponse(
-                {"message": "Logout Successfully"}, status=status.HTTP_205_RESET_CONTENT
+                {"message": "Logout Successfully"},
+                status=status.HTTP_205_RESET_CONTENT,
             )
+        except Exception as e:
+            return JsonResponse(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class ApplicantProfileView(APIView):
+    """Applicant Profile"""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            applicant_profile = ApplicantProfile.objects.get(user=request.user)
+            if applicant_profile:
+                return JsonResponse(
+                    {"error": "An applicant profile already exists for this user."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer = ApplicantProfileSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return JsonResponse(
+                    {"message": "Applicant Profile Created Successfully!"},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return JsonResponse(
+                    {"error": str(serializer.errors)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-class ProtectedView(APIView):
-    authentication_classes = [JWTAuthentication]  # Use JWT authentication
-    permission_classes = [permissions.IsAuthenticated]  # Allow only authenticated users
-
     def get(self, request):
-        content = {"message": "Successful!"}
-        return JsonResponse(content)
+        try:
+            applicant_profile = ApplicantProfile.objects.get(user=request.user)
+            serializer = ApplicantProfileSerializer(applicant_profile)
+            return JsonResponse(
+                {
+                    "data": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        try:
+            applicant_profile = ApplicantProfile.objects.get(user=request.user)
+            serializer = ApplicantProfileSerializer(
+                applicant_profile, request.data, partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(
+                    {"message": "Applicant Profile Updated Successfully!"},
+                    status=status.HTTP_201_CREATED,
+                )
+            return JsonResponse(
+                {"error": str(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
