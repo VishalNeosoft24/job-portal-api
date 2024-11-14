@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from users.models import User, ApplicantProfile, Skill
+from users.models import EmployerProfile, User, ApplicantProfile, Skill
 from django.contrib.auth.hashers import make_password
 import re
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    user_type = serializers.CharField()
+    user_type = serializers.CharField(write_only=True)
 
     def validate_user_type(self, value):
         """Custom validation for user_type"""
@@ -47,11 +47,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class ApplicantProfileSerializer(serializers.ModelSerializer):
     """ApplicantProfileSerializer"""
 
+    user = UserRegisterSerializer()
     skills = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
 
     class Meta:
         model = ApplicantProfile
         fields = [
+            "user",
             "phone_number",
             "address",
             "resume_file",
@@ -90,3 +92,25 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class EmployerProfileSerializer(serializers.ModelSerializer):
+    """EmployerProfileSerializer"""
+
+    user = UserRegisterSerializer()
+
+    class Meta:
+        model = EmployerProfile
+        fields = [
+            "user",
+            "company_name",
+            "company_website",
+            "location",
+            "description",
+        ]
+
+    def create(self, validated_data):
+        user = validated_data.pop("user")
+        profile = EmployerProfile.objects.create(user=user, **validated_data)
+        profile.save()
+        return profile
