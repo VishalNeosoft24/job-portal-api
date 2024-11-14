@@ -146,7 +146,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Access token expiration time
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=300),  # Access token expiration time
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # Refresh token expiration time
     "ROTATE_REFRESH_TOKENS": False,  # Set True if you want to rotate refresh tokens
     "BLACKLIST_AFTER_ROTATION": True,  # If using refresh token rotation, set this to True
