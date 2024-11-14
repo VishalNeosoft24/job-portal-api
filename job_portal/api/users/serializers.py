@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from users.models import User, ApplicantProfile, EmployerProfile
-from django.contrib.contenttypes.models import ContentType
+from users.models import User, ApplicantProfile, Skill
 from django.contrib.auth.hashers import make_password
+import re
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -34,13 +34,59 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         )
 
         if user_type == "Applicant":
-            content_type = ContentType.objects.get_for_model(ApplicantProfile)
-            user.content_type = content_type
+            user.is_applicant = True
         elif user_type == "Employer":
-            content_type = ContentType.objects.get_for_model(EmployerProfile)
-            user.content_type = content_type
+            user.is_employer = True
         else:
             raise serializers.ValidationError("Invalid User Type")
         user.save()
 
         return user
+
+
+class ApplicantProfileSerializer(serializers.ModelSerializer):
+    """ApplicantProfileSerializer"""
+
+    skills = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
+
+    class Meta:
+        model = ApplicantProfile
+        fields = [
+            "phone_number",
+            "address",
+            "resume_file",
+            "skills",
+            "profile_complete",
+        ]
+
+    def validate_resume_file(self, value):
+        if value.content_type != "application/pdf":
+            raise serializers.ValidationError(
+                "Only PDF files are allowed for the resume."
+            )
+        return value
+
+    def validate_phone_number(self, value):
+        if not re.match(r"^\d{10}$", str(value)):
+            raise serializers.ValidationError("Phone number must be exactly 10 digits.")
+        return value
+
+    def create(self, validated_data):
+        skills_data = validated_data.pop("skills")
+        user = validated_data.pop("user")
+        profile = ApplicantProfile.objects.create(user=user, **validated_data)
+        profile.skills.set(skills_data)
+        profile.save()
+
+        return profile
+
+    def update(self, instance, validated_data):
+        skills_data = validated_data.pop("skills", [])
+
+        for key, val in validated_data.items():
+            setattr(instance, key, val)
+
+        instance.skills.set(skills_data)
+        instance.save()
+
+        return instance
