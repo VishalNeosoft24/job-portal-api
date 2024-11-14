@@ -12,4 +12,9 @@ urlpatterns = [
         views.ApplicantProfileView.as_view(),
         name="applicant_profile",
     ),
+    path(
+        "profile/employer/",
+        views.EmployerProfileView.as_view(),
+        name="employer_profile",
+    ),
 ]
