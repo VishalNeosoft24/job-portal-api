@@ -33,11 +33,8 @@ class User(AbstractUser):
         is_employer (BooleanField): Flag to identify if the user is an employer.
     """
 
-    content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, null=True, blank=True
-    )
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_object = GenericForeignKey("content_type", "object_id")
+    is_applicant = models.BooleanField(default=False)
+    is_employer = models.BooleanField(default=False)
 
 
 class ApplicantProfile(BaseModel):
@@ -54,7 +51,9 @@ class ApplicantProfile(BaseModel):
         profile_complete (BooleanField): Indicates if the profile setup is complete.
     """
 
-    full_name = models.CharField(max_length=100)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="applicant_profile"
+    )
     phone_number = models.CharField(max_length=15)
     address = models.TextField()
     resume_file = models.FileField(upload_to="resumes/")
@@ -62,7 +61,7 @@ class ApplicantProfile(BaseModel):
     profile_complete = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.full_name
+        return self.user.username
 
 
 class EmployerProfile(BaseModel):
@@ -77,6 +76,9 @@ class EmployerProfile(BaseModel):
         description (TextField): Description or additional information about the employer.
     """
 
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="employer_profile"
+    )
     company_name = models.CharField(max_length=100)
     company_website = models.URLField()
     location = models.CharField(max_length=100)
