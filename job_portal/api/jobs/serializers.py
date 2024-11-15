@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from jobs.models import Jobs
+from jobs.models import JobApplication, Jobs
 from users.models import Skill, EmployerProfile
 
 
@@ -45,3 +45,17 @@ class JobSerializer(serializers.ModelSerializer):
         instance.required_skills.set(required_skills)
         instance.save()
         return instance
+
+
+class JobApplicationSerializer(serializers.ModelSerializer):
+    """JobApplicationViewSerializer"""
+
+    class Meta:
+        model = JobApplication
+        fields = [
+            "id",
+            "applicant",
+            "job_listing",
+            "status",
+            "applied_date",
+        ]
