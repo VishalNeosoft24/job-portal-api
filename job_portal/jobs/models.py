@@ -4,8 +4,6 @@ from users.models import EmployerProfile, Skill, ApplicantProfile, User, BaseMod
 
 
 # Create your models here.
-
-
 class Jobs(BaseModel):
     """
     Model to represent a job listing created by an employer.
