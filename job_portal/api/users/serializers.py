@@ -53,6 +53,7 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApplicantProfile
         fields = [
+            "id",
             "user",
             "phone_number",
             "address",
