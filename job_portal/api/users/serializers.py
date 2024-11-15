@@ -47,7 +47,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class ApplicantProfileSerializer(serializers.ModelSerializer):
     """ApplicantProfileSerializer"""
 
-    user = UserRegisterSerializer()
+    user = UserRegisterSerializer(read_only=True)
     skills = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
 
     class Meta:
@@ -97,7 +97,7 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
 class EmployerProfileSerializer(serializers.ModelSerializer):
     """EmployerProfileSerializer"""
 
-    user = UserRegisterSerializer()
+    user = UserRegisterSerializer(read_only=True)
 
     class Meta:
         model = EmployerProfile
