@@ -1,9 +1,9 @@
-from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from users.models import ApplicantProfile, EmployerProfile
 from .serializers import (
@@ -11,6 +11,7 @@ from .serializers import (
     UserRegisterSerializer,
     ApplicantProfileSerializer,
 )
+from api.utils import ApiResponse
 
 
 # Create your views here.
@@ -18,14 +19,22 @@ class RegisterView(APIView):
     """User Operations"""
 
     def post(self, request):
-        serializer = UserRegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(
-                {"message": "User registered successfully."},
-                status=status.HTTP_201_CREATED,
+        try:
+            serializer = UserRegisterSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return ApiResponse.success(
+                    message="User registered successfully.",
+                    status_code=status.HTTP_201_CREATED,
+                )
+            else:
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+        except Exception as e:
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):
@@ -36,14 +45,15 @@ class LogoutView(APIView):
             refresh_token = request.data["refresh_token"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return JsonResponse(
-                {"message": "Logout Successfully"},
-                status=status.HTTP_205_RESET_CONTENT,
+            return ApiResponse.success(
+                message="Logout Successfully.",
+                status_code=status.HTTP_205_RESET_CONTENT,
             )
         except Exception as e:
-            return JsonResponse(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -55,76 +65,92 @@ class ApplicantProfileView(APIView):
 
     def post(self, request):
         try:
-            applicant_profile = ApplicantProfile.objects.get(user=request.user)
-            if applicant_profile:
-                return JsonResponse(
-                    {"error": "An applicant profile already exists for this user."},
-                    status=status.HTTP_400_BAD_REQUEST,
+            if ApplicantProfile.objects.filter(user=request.user).exists():
+                return ApiResponse.error(
+                    message="An applicant profile already exists for this user.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
-
             serializer = ApplicantProfileSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save(user=request.user)
-                return JsonResponse(
-                    {"message": "Applicant Profile Created Successfully!"},
-                    status=status.HTTP_201_CREATED,
+                return ApiResponse.success(
+                    message="Applicant Profile Created Successfully!",
+                    status_code=status.HTTP_201_CREATED,
                 )
             else:
-                return JsonResponse(
-                    {"error": str(serializer.errors)},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def get(self, request):
         try:
-            applicant_profile = ApplicantProfile.objects.filter(
-                user=request.user
-            ).first()
-            if not applicant_profile:
-                return JsonResponse(
-                    {"error": "An Applicant profile not exists for this user."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
+            applicant_profile = ApplicantProfile.objects.get(user=request.user)
             serializer = ApplicantProfileSerializer(applicant_profile)
-            return JsonResponse(
-                {
-                    "data": serializer.data,
-                },
-                status=status.HTTP_200_OK,
+            return ApiResponse.success(
+                data=serializer.data,
+                message="Applicant profile retrieved successfully.",
+                status_code=status.HTTP_200_OK,
+            )
+        except ObjectDoesNotExist:
+            # Handle case when the applicant profile does not exist
+            return ApiResponse.error(
+                message="An applicant profile does not exist for this user.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        except MultipleObjectsReturned:
+            # Handle case when multiple profiles exist for the user (indicating a data issue)
+            return ApiResponse.error(
+                message="Multiple applicant profiles found for this user.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def put(self, request):
         try:
-            applicant_profile = ApplicantProfile.objects.filter(
-                user=request.user
-            ).first()
-            if not applicant_profile:
-                return JsonResponse(
-                    {"error": "An Applicant profile not exists"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            applicant_profile = ApplicantProfile.objects.get(user=request.user)
             serializer = ApplicantProfileSerializer(
                 applicant_profile, request.data, partial=True
             )
             if serializer.is_valid():
                 serializer.save()
-                return JsonResponse(
-                    {"message": "Applicant Profile Updated Successfully!"},
-                    status=status.HTTP_201_CREATED,
+                return ApiResponse.success(
+                    message="Applicant Profile Updated Successfully!",
                 )
-            return JsonResponse(
-                {"error": str(serializer.errors)},
-                status=status.HTTP_400_BAD_REQUEST,
+            else:
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+
+        except ObjectDoesNotExist:
+            # Handle case when the applicant profile does not exist
+            return ApiResponse.error(
+                message="An applicant profile does not exist for this user.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        except MultipleObjectsReturned:
+            # Handle case when multiple profiles exist for the user (indicating a data issue)
+            return ApiResponse.error(
+                message="Multiple applicant profiles found for this user.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class EmployerProfileView(APIView):
@@ -135,68 +161,84 @@ class EmployerProfileView(APIView):
 
     def post(self, request):
         try:
-            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
-            if employer_profile:
-                return JsonResponse(
-                    {"error": "An employer profile already exists for this user."},
-                    status=status.HTTP_400_BAD_REQUEST,
+            if EmployerProfile.objects.filter(user=request.user).exists():
+                return ApiResponse.error(
+                    message="An employer profile already exists for this user.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
             serializer = EmployerProfileSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save(user=request.user)
-                return JsonResponse(
-                    {"message": "Employer Profile Created Successfully!"},
-                    status=status.HTTP_201_CREATED,
+                return ApiResponse.success(
+                    message="Employer Profile Created Successfully!",
+                    status_code=status.HTTP_201_CREATED,
                 )
             else:
-                return JsonResponse(
-                    {"error": str(serializer.errors)},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def get(self, request):
         try:
-            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
-            if not employer_profile:
-                return JsonResponse(
-                    {"error": "An Employer profile not exists for this user."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            employer_profile = EmployerProfile.objects.get(user=request.user)
             serializer = EmployerProfileSerializer(employer_profile)
-            return JsonResponse(
-                {
-                    "data": serializer.data,
-                },
-                status=status.HTTP_200_OK,
+            return ApiResponse.success(
+                data=serializer.data,
+                message="Employer profile retrieved successfully.",
+                status_code=status.HTTP_200_OK,
+            )
+
+        except ObjectDoesNotExist:
+            # Handle case when the applicant profile does not exist
+            return ApiResponse.error(
+                message="An Employer profile does not exist for this user.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        except MultipleObjectsReturned:
+            # Handle case when multiple profiles exist for the user (indicating a data issue)
+            return ApiResponse.error(
+                message="Multiple Employer profiles found for this user.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def put(self, request):
         try:
             employer_profile = EmployerProfile.objects.filter(user=request.user).first()
-            if not employer_profile:
-                return JsonResponse(
-                    {"error": "An Employer profile not exists"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             serializer = EmployerProfileSerializer(
                 employer_profile, request.data, partial=True
             )
             if serializer.is_valid():
                 serializer.save()
-                return JsonResponse(
-                    {"message": "Employer Profile Updated Successfully!"},
-                    status=status.HTTP_201_CREATED,
+                return ApiResponse.success(
+                    data=serializer.data,
+                    message="Employer Profile Updated Successfully!",
                 )
-            return JsonResponse(
-                {"error": str(serializer.errors)},
-                status=status.HTTP_400_BAD_REQUEST,
+            else:
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+
+        except ObjectDoesNotExist:
+            # Handle case when the applicant profile does not exist
+            return ApiResponse.error(
+                message="An Employer profile does not exist for this user.",
+                status_code=status.HTTP_404_NOT_FOUND,
             )
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
