@@ -1,9 +1,9 @@
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from jobs.models import Jobs
-from .serializers import JobSerializer
+from jobs.models import Jobs, JobApplication
+from .serializers import JobApplicationSerializer, JobSerializer
 from rest_framework import status
-from users.models import EmployerProfile
+from users.models import EmployerProfile, ApplicantProfile
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -80,20 +80,17 @@ class JobRetrieveUpdateDeleteView(APIView):
             )
 
         except EmployerProfile.DoesNotExist:
-            # Handle case when the applicant profile does not exist
             return ApiResponse.error(
                 message="Employer profile not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         except Jobs.DoesNotExist:
-            # Handle case where the job does not exist for this employer
             return ApiResponse.error(
                 message="Job not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
         except MultipleObjectsReturned:
-            # Handle case when multiple profiles exist for the user (indicating a data issue)
             return ApiResponse.error(
                 message="Multiple entries found, please contact support.",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -123,13 +120,11 @@ class JobRetrieveUpdateDeleteView(APIView):
                 return ApiResponse.serializer_error(serializer_errors=serializer.errors)
 
         except EmployerProfile.DoesNotExist:
-            # Handle case when the applicant profile does not exist
             return ApiResponse.error(
                 message="Employer profile not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         except Jobs.DoesNotExist:
-            # Handle case where the job does not exist for this employer
             return ApiResponse.error(
                 message="Job not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -155,13 +150,11 @@ class JobRetrieveUpdateDeleteView(APIView):
             )
 
         except EmployerProfile.DoesNotExist:
-            # Handle case when the applicant profile does not exist
             return ApiResponse.error(
                 message="Employer profile not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         except Jobs.DoesNotExist:
-            # Handle case where the job does not exist for this employer
             return ApiResponse.error(
                 message="Job not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -191,16 +184,79 @@ class RetrieveEmployerJob(APIView):
                 status_code=status.HTTP_200_OK,
             )
         except ObjectDoesNotExist:
-            # Handle case when the applicant profile does not exist
             return ApiResponse.error(
                 message="Job does not exist",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         except MultipleObjectsReturned:
-            # Handle case when multiple profiles exist for the user (indicating a data issue)
             return ApiResponse.error(
                 message="Multiple jobs found.",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except Exception as e:
+            return ApiResponse.error(
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class JobApplicationView(APIView):
+    "JobApplicationCreateRetrieveView"
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        try:
+            serializer = JobApplicationSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return ApiResponse.success(
+                    message="New JobApplication Created!",
+                    status_code=status.HTTP_201_CREATED,
+                )
+            else:
+                return ApiResponse.serializer_error(serializer_errors=serializer.errors)
+
+        except Exception as e:
+            return ApiResponse.error(
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def get(self, request):
+        try:
+            applicant = ApplicantProfile.objects.get(user=request.user)
+            job_applications = JobApplication.objects.filter(applicant=applicant).all()
+            serializer = JobApplicationSerializer(job_applications, many=True)
+            return ApiResponse.success(
+                data=serializer.data,
+                message="JobApplications retrieved successfully.",
+                status_code=status.HTTP_200_OK,
+            )
+        except ApplicantProfile.DoesNotExist:
+            return ApiResponse.error(
+                message="Employer profile not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        except Exception as e:
+            return ApiResponse.error(
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def delete(self, request, job_application_id):
+        try:
+            job_application = JobApplication.objects.get(id=job_application_id)
+            job_application.delete()
+            return ApiResponse.success(
+                message="Job Application Deleted Successfully",
+            )
+        except JobApplication.DoesNotExist:
+            return ApiResponse.error(
+                message="Job Application not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             return ApiResponse.error(
