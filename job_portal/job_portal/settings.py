@@ -58,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "api.middleware.api_logging_middleware.APILoggingMiddleware",
 ]
 
 ROOT_URLCONF = "job_portal.urls"
@@ -164,4 +165,34 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+}
+
+TEST_RUNNER = "redgreenunittest.django.runner.RedGreenDiscoverRunner"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "api_file_handler": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": "api_log.log",
+            "when": "midnight",  # Rotate the file at midnight
+            "backupCount": 7,  # Keep logs for 7 days
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "api_logger": {
+            "handlers": ["api_file_handler"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
