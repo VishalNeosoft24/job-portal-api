@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Jobs, JobApplication
+from .models import JobApplicationAudit, Jobs, JobApplication
 
 # Register your models here.
 
@@ -24,8 +24,6 @@ class JobsAdmin(admin.ModelAdmin):
     list_filter = [
         "job_title",
         "location",
-        "salary_min",
-        "salary_max",
         "experience_level",
         "posted_date",
         "is_active",
@@ -44,3 +42,14 @@ class JobApplicationAdmin(admin.ModelAdmin):
         "applied_date",
     ]
     list_filter = ["status"]
+
+
+@admin.register(JobApplicationAudit)
+class JobApplicationAuditAdmin(admin.ModelAdmin):
+    list_display = [
+        "job_application",
+        "status",
+        "notes",
+        "updated_by",
+        "updated_at",
+    ]
