@@ -47,7 +47,7 @@ class LogoutView(APIView):
             token.blacklist()
             return ApiResponse.success(
                 message="Logout Successfully.",
-                status_code=status.HTTP_205_RESET_CONTENT,
+                status_code=status.HTTP_200_OK,
             )
         except Exception as e:
             return ApiResponse.error(
@@ -68,6 +68,11 @@ class ApplicantProfileView(APIView):
             if ApplicantProfile.objects.filter(user=request.user).exists():
                 return ApiResponse.error(
                     message="An applicant profile already exists for this user.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            elif not request.user.is_applicant:
+                return ApiResponse.error(
+                    message="This action requires an applicant profile.",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = ApplicantProfileSerializer(data=request.data)
@@ -103,13 +108,6 @@ class ApplicantProfileView(APIView):
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        except MultipleObjectsReturned:
-            # Handle case when multiple profiles exist for the user (indicating a data issue)
-            return ApiResponse.error(
-                message="Multiple applicant profiles found for this user.",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
         except Exception as e:
             return ApiResponse.error(
                 message="An unexpected error occurred.",
@@ -138,13 +136,6 @@ class ApplicantProfileView(APIView):
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        except MultipleObjectsReturned:
-            # Handle case when multiple profiles exist for the user (indicating a data issue)
-            return ApiResponse.error(
-                message="Multiple applicant profiles found for this user.",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
         except Exception as e:
             return ApiResponse.error(
                 message="An unexpected error occurred.",
@@ -164,6 +155,11 @@ class EmployerProfileView(APIView):
             if EmployerProfile.objects.filter(user=request.user).exists():
                 return ApiResponse.error(
                     message="An employer profile already exists for this user.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            elif not request.user.is_employer:
+                return ApiResponse.error(
+                    message="This action requires an employer profile.",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -200,12 +196,6 @@ class EmployerProfileView(APIView):
                 message="An Employer profile does not exist for this user.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
-        except MultipleObjectsReturned:
-            # Handle case when multiple profiles exist for the user (indicating a data issue)
-            return ApiResponse.error(
-                message="Multiple Employer profiles found for this user.",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         except Exception as e:
             return ApiResponse.error(
@@ -216,7 +206,7 @@ class EmployerProfileView(APIView):
 
     def put(self, request):
         try:
-            employer_profile = EmployerProfile.objects.filter(user=request.user).first()
+            employer_profile = EmployerProfile.objects.get(user=request.user)
             serializer = EmployerProfileSerializer(
                 employer_profile, request.data, partial=True
             )
