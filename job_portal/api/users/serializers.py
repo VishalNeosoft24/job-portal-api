@@ -89,7 +89,8 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
         for key, val in validated_data.items():
             setattr(instance, key, val)
 
-        instance.skills.set(skills_data)
+        if skills_data:
+            instance.skills.set(skills_data)
         instance.save()
 
         return instance
