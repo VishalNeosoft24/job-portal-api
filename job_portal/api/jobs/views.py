@@ -10,6 +10,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .permissions import HasEmployerProfilePermission
 from rest_framework.exceptions import PermissionDenied
 from api.utils import ApiResponse
+from jobs.utils import JobApplicationAuditLogs
 
 
 class JobCreateRetrieveView(APIView):
@@ -29,12 +30,6 @@ class JobCreateRetrieveView(APIView):
                 )
             else:
                 return ApiResponse.serializer_error(serializer_errors=serializer.errors)
-        except PermissionDenied as e:
-            return ApiResponse.error(
-                message=str(e),
-                status_code=status.HTTP_403_FORBIDDEN,
-            )
-
         except Exception as e:
             return ApiResponse.error(
                 errors=str(e),
@@ -78,22 +73,10 @@ class JobRetrieveUpdateDeleteView(APIView):
                 message="Jobs Details retrieved successfully.",
                 status_code=status.HTTP_200_OK,
             )
-
-        except EmployerProfile.DoesNotExist:
-            return ApiResponse.error(
-                message="Employer profile not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         except Jobs.DoesNotExist:
             return ApiResponse.error(
                 message="Job not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
-            )
-
-        except MultipleObjectsReturned:
-            return ApiResponse.error(
-                message="Multiple entries found, please contact support.",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         except Exception as e:
             return ApiResponse.error(
@@ -119,11 +102,6 @@ class JobRetrieveUpdateDeleteView(APIView):
             else:
                 return ApiResponse.serializer_error(serializer_errors=serializer.errors)
 
-        except EmployerProfile.DoesNotExist:
-            return ApiResponse.error(
-                message="Employer profile not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         except Jobs.DoesNotExist:
             return ApiResponse.error(
                 message="Job not found.",
@@ -149,11 +127,6 @@ class JobRetrieveUpdateDeleteView(APIView):
                 message="Job Deleted Successfully",
             )
 
-        except EmployerProfile.DoesNotExist:
-            return ApiResponse.error(
-                message="Employer profile not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         except Jobs.DoesNotExist:
             return ApiResponse.error(
                 message="Job not found.",
@@ -183,16 +156,7 @@ class RetrieveEmployerJob(APIView):
                 message="Jobs retrieved successfully.",
                 status_code=status.HTTP_200_OK,
             )
-        except ObjectDoesNotExist:
-            return ApiResponse.error(
-                message="Job does not exist",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-        except MultipleObjectsReturned:
-            return ApiResponse.error(
-                message="Multiple jobs found.",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
         except Exception as e:
             return ApiResponse.error(
                 errors=str(e),
@@ -210,7 +174,14 @@ class JobApplicationView(APIView):
         try:
             serializer = JobApplicationSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                job_application = serializer.save()
+
+                job_application_log = JobApplicationAuditLogs(job_application)
+                job_application_log.add_audit_logs(
+                    job_status=job_application.status,
+                    updated_by=request.user,
+                    notes="Job Applied",
+                )
                 return ApiResponse.success(
                     message="New JobApplication Created!",
                     status_code=status.HTTP_201_CREATED,
@@ -236,7 +207,7 @@ class JobApplicationView(APIView):
             )
         except ApplicantProfile.DoesNotExist:
             return ApiResponse.error(
-                message="Employer profile not found.",
+                message="Applicant profile not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
