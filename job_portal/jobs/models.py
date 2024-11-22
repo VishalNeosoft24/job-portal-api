@@ -66,6 +66,7 @@ class JobApplication(BaseModel):
 
     STATUS_CHOICES = [
         ("applied", "Applied"),
+        ("pending", "Pending"),
         ("shortlisted", "Shortlisted"),
         ("interview", "Interview"),
         ("rejected", "Rejected"),
@@ -87,6 +88,36 @@ class JobApplication(BaseModel):
 
     def __str__(self):
         return f"{self.applicant.user.username} - {self.job_listing.job_title}"
+
+
+class JobApplicationAudit(models.Model):
+    """
+    Tracks the audit trail for job applications, including status changes, notes,
+    and the user responsible for the updates.
+    """
+
+    job_application = models.ForeignKey(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    status = models.CharField(
+        max_length=50,
+        choices=JobApplication.STATUS_CHOICES,
+        default="pending",
+    )
+    notes = models.TextField(blank=True, null=True)
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="job_application_updates",
+    )
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Audit for JobApplication {self.job_application.id} - {self.status}"
 
 
 class Notification(BaseModel):
