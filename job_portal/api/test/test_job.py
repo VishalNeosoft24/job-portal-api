@@ -1,12 +1,12 @@
-from rest_framework.test import APITestCase
+from unittest.mock import patch
+
 from django.urls import reverse
 from faker import Faker
-from rest_framework import status
 from jobs.models import JobApplication, Jobs
-from users.models import ApplicantProfile, EmployerProfile, Skill, User
-from unittest.mock import patch
+from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
-
+from rest_framework.test import APITestCase
+from users.models import ApplicantProfile, EmployerProfile, Skill, User
 
 fake = Faker()
 
@@ -318,6 +318,7 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
         profile.skills.set(skill_ids)  # Use .set() for Many-to-Many relationships
 
         import os
+
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         # Provide a file object with a proper filename
@@ -360,7 +361,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
             is_active=True,
         )
         ids = self.create_skills()
-        print("ids: ", ids)
         job.required_skills.set(ids)
         job.save()
         return job
@@ -396,7 +396,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
         mock_get_employer.side_effect = Exception("Something went wrong.")
 
         response = self.client.get(self.job_url)
-        print("response: ", response.data)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # ===========================PUT=============================
@@ -451,7 +450,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
         }
 
         response = self.client.put(self.job_url, data=update_data)
-        print("response - put: ", response.data)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # ======================Delete======================================
@@ -609,7 +607,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
         """Test deleting a job application successfully"""
         self.test_create_job_application_success()
         job_application_response = self.client.get(self.job_application)
-        print("job_application_response: ", job_application_response)
         response = self.client.delete(
             f"{self.job_application}{job_application_response.data.get('data')[0].get('id')}/"
         )
@@ -618,7 +615,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
     def test_delete_job_application_not_found(self):
         """Test deleting a job application that does not exist"""
         response = self.client.delete(f"{self.job_application}999/")
-        print("response job_application_not_found: ", response)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_job_application_unauthenticated(self):
@@ -635,7 +631,6 @@ class JobRetrieveUpdateDeleteViewTest(APITestCase):
         mock_get_employer.side_effect = Exception("Something went wrong.")
         self.test_create_job_application_success()
         job_application_response = self.client.get(self.job_application)
-        print("job_application_response: ", job_application_response)
         response = self.client.delete(
             f"{self.job_application}{job_application_response.data.get('data')[0].get('id')}/"
         )

@@ -1,15 +1,15 @@
-from django.urls import reverse
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
 from unittest.mock import patch
-from users.models import Skill
+
+from django.urls import reverse
 from faker import Faker
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
+from users.models import Skill
 
 fake = Faker()
 
 
 class UsersTestSetup(APITestCase):
-
     def setUp(self):
         self.register_url = reverse("register")
         self.login_url = reverse("login")
@@ -223,7 +223,6 @@ class UsersTestSetup(APITestCase):
 
 
 class ApplicantProfileTestSetup(APITestCase):
-
     def setUp(self):
         self.register_url = reverse("register")
         self.login_url = reverse("login")
@@ -450,7 +449,6 @@ class ApplicantProfileTestSetup(APITestCase):
             "skills": [10, 11, 12],
             "profile_complete": True,
         }
-        print(Skill.objects.values("id", "name"))
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
@@ -582,7 +580,6 @@ class ApplicantProfileTestSetup(APITestCase):
             "skills": [13, 14, 15],
             "profile_complete": True,
         }
-        print(Skill.objects.values("id", "name"))
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
@@ -611,7 +608,6 @@ class ApplicantProfileTestSetup(APITestCase):
             "skills": [16, 17, 18],
             "profile_complete": True,
         }
-        print(Skill.objects.values("id", "name"))
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
@@ -654,7 +650,6 @@ class ApplicantProfileTestSetup(APITestCase):
 
 
 class EmployerProfileTestSetup(APITestCase):
-
     def setUp(self):
         self.register_url = reverse("register")
         self.login_url = reverse("login")
