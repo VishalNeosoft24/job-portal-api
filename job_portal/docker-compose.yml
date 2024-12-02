@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - "resumes_data:/project/resumes"
+    env_file: 
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=job_portal
+      - DB_PORT=3306
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - ENGINE=django.db.backends.mysql
+    depends_on:
+      - db
+    networks:
+      - job_portal_network
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_container
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_DATABASE: job_portal
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Load the init script
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u myuser -pmypassword || exit 1"]
+      interval: 10s
+      retries: 5
+    networks:
+      - job_portal_network
+  
+volumes:
+  resumes_data:
+  mysql_data:
+
+networks:
+  job_portal_network:
+    driver: bridge
