@@ -5,6 +5,14 @@ set -e
 
 echo "Starting startup script..."
 
+# Step 0: Wait for the database to be ready
+echo "Waiting for the database to be ready..."
+until nc -z -v -w30 db 3306
+do
+  echo "Waiting for MySQL database connection..."
+  sleep 5
+done
+
 # Step 1: Apply migrations
 echo "Applying migrations..."
 python manage.py migrate
