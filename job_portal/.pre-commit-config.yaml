@@ -7,3 +7,40 @@ repos:
         always_run: true
         pass_filenames: false
         language: system
+        
+# repos:
+#   - repo: local
+#     hooks:
+#       - id: django-test
+#         name: django-test
+#         entry: python job_portal/manage.py test job_portal/api/test/
+#         always_run: true
+#         pass_filenames: false
+#         language: system
+#       # Hook to check Python code formatting with Black
+#       - id: black
+#         name: Format Code with Black
+#         entry: black .
+#         language: system
+#         types: [python]
+
+#       # Hook to check Python code style with Flake8
+#       - id: flake8
+#         name: Lint Code with Flake8
+#         entry: flake8
+#         language: system
+#         types: [python]
+
+#       # Hook to sort imports with isort
+#       - id: isort
+#         name: Sort Imports with isort
+#         entry: isort .
+#         language: system
+#         types: [python]
+
+#       # Hook to detect security issues using Bandit
+#       - id: bandit
+#         name: Run Bandit for Security Checks
+#         entry: bandit -r job_portal/
+#         language: system
+#         types: [python]
