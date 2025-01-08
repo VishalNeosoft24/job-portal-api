@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import JobApplicationAudit, Jobs, JobApplication
+from .models import JobApplicationAudit, Jobs, JobApplication, Notification
 
 # Register your models here.
 
@@ -53,3 +53,8 @@ class JobApplicationAuditAdmin(admin.ModelAdmin):
         "updated_by",
         "updated_at",
     ]
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ["user", "message"]
