@@ -17,4 +17,5 @@ urlpatterns = [
         views.EmployerProfileView.as_view(),
         name="employer_profile",
     ),
+    path("user-profile/", views.UserProfileView.as_view(), name="user_profile"),
 ]

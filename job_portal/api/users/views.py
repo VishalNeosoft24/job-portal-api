@@ -3,8 +3,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 
+from utils.notification_service import NotificationServiceOperation
 from users.models import ApplicantProfile, EmployerProfile
 from .serializers import (
     EmployerProfileSerializer,
@@ -22,7 +23,11 @@ class RegisterView(APIView):
         try:
             serializer = UserRegisterSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                user = serializer.save()
+                # Sending data to notification service
+                notification_service_operation = NotificationServiceOperation()
+                notification_service_operation.send_user_registration_data(user)
+
                 return ApiResponse.success(
                     message="User registered successfully.",
                     status_code=status.HTTP_201_CREATED,
@@ -96,6 +101,15 @@ class ApplicantProfileView(APIView):
         try:
             applicant_profile = ApplicantProfile.objects.get(user=request.user)
             serializer = ApplicantProfileSerializer(applicant_profile)
+
+            # Sending data to notification service
+            notification_service_operation = NotificationServiceOperation()
+
+            notification_service_operation.send_user_registration_data(request.user)
+            notification_service_operation.send_tokens_to_notification_service(
+                request=request
+            )
+
             return ApiResponse.success(
                 data=serializer.data,
                 message="Applicant profile retrieved successfully.",
@@ -223,6 +237,36 @@ class EmployerProfileView(APIView):
             # Handle case when the applicant profile does not exist
             return ApiResponse.error(
                 message="An Employer profile does not exist for this user.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        except Exception as e:
+            return ApiResponse.error(
+                message="An unexpected error occurred.",
+                errors=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class UserProfileView(APIView):
+    """User Profile View for Fastapi Notification Service"""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            serializer = UserRegisterSerializer(request.user)
+            return ApiResponse.success(
+                data=serializer.data,
+                message="User profile retrieved successfully.",
+                status_code=status.HTTP_200_OK,
+            )
+
+        except ObjectDoesNotExist:
+            # Handle case when the user profile does not exist
+            return ApiResponse.error(
+                message="An User profile does not exist for this user.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
