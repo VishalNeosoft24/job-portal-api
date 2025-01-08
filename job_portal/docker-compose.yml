@@ -22,7 +22,7 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: mysql_container
+    container_name: job_portal_mysql_container
     ports:
       - "3308:3306"
     environment:
@@ -35,7 +35,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Load the init script
 
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u myuser -pmypassword || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u myuser -p mypassword || exit 1"]
       interval: 10s
       retries: 5
     networks:
