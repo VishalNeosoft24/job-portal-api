@@ -169,6 +169,9 @@ SIMPLE_JWT = {
 
 TEST_RUNNER = "redgreenunittest.django.runner.RedGreenDiscoverRunner"
 
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -182,7 +185,7 @@ LOGGING = {
         "api_file_handler": {
             "level": "INFO",
             "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": "api_log.log",
+            "filename": os.path.join(LOG_DIR, "api_log.log"),
             "when": "midnight",  # Rotate the file at midnight
             "backupCount": 7,  # Keep logs for 7 days
             "formatter": "verbose",
