@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.urls import reverse
 from faker import Faker
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APITestCase
 from users.models import Skill
 
 fake = Faker()
