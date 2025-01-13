@@ -312,26 +312,33 @@ class ApplicantProfileTestSetup(APITestCase):
 
     def test_applicant_profile_valid(self, *args, **kwargs):
         """applicant profile"""
-        Skill.objects.bulk_create(
+        skills = Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
+        applicant_profile_data = self.applicant_profile_data.copy()
+        applicant_profile_data["skills"] = skill_ids
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
             response = self.client.post(
                 self.applicant_profile_url,
-                data={**self.applicant_profile_data, "resume_file": resume},
+                data={**applicant_profile_data, "resume_file": resume},
                 format="multipart",
             )
         self.assertEquals(response.status_code, 201)
 
     def test_applicant_profile_with_duplicate_data(self, *args, **kwargs):
         """applicant profile with duplicate data"""
-        Skill.objects.bulk_create(
+        skills = Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
+
         applicant_profile_data = self.applicant_profile_data.copy()
-        applicant_profile_data["skills"] = [4, 5, 6]
+        applicant_profile_data["skills"] = skill_ids
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
@@ -361,7 +368,10 @@ class ApplicantProfileTestSetup(APITestCase):
 
     def test_applicant_profile_invalid_file_type(self):
         """Invalid File type"""
-        with open("/home/neosoft/Downloads/test_file.txt", "rb") as invalid_file:
+        with open(
+            "/home/neosoft/vishal/Django/Django_Rest_Framework/job-portal-api/job_portal/docker_commands.txt",
+            "rb",
+        ) as invalid_file:
             response = self.client.post(
                 self.applicant_profile_url,
                 data={**self.applicant_profile_data, "resume_file": invalid_file},
@@ -443,10 +453,12 @@ class ApplicantProfileTestSetup(APITestCase):
         Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
         applicant_profile_data = {
             "phone_number": "1245125412",
             "address": fake.address(),
-            "skills": [10, 11, 12],
+            "skills": skill_ids,
             "profile_complete": True,
         }
         with open(
@@ -546,11 +558,13 @@ class ApplicantProfileTestSetup(APITestCase):
         # Simulate an exception being raised when attempting to blacklist the token
         mock_blacklist.side_effect = Exception("Unexpected error")
 
-        Skill.objects.bulk_create(
+        skills = Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
         applicant_profile_data = self.applicant_profile_data.copy()
-        applicant_profile_data["skills"] = [7, 8, 9]
+        applicant_profile_data["skills"] = skill_ids
         with open(
             "/home/neosoft/Downloads/Darsh_Modi1731414878-DB Crop.pdf", "rb"
         ) as resume:
@@ -574,10 +588,12 @@ class ApplicantProfileTestSetup(APITestCase):
         Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
         applicant_profile_data = {
             "phone_number": "1245125412",
             "address": fake.address(),
-            "skills": [13, 14, 15],
+            "skills": skill_ids,
             "profile_complete": True,
         }
         with open(
@@ -602,10 +618,12 @@ class ApplicantProfileTestSetup(APITestCase):
         Skill.objects.bulk_create(
             [Skill(name="python"), Skill(name="django"), Skill(name="drf")]
         )
+        skills = Skill.objects.filter(name__in=["python", "django", "drf"])
+        skill_ids = [skill.id for skill in skills]
         applicant_profile_data = {
             "phone_number": "1245125412",
             "address": fake.address(),
-            "skills": [16, 17, 18],
+            "skills": skill_ids,
             "profile_complete": True,
         }
         with open(
