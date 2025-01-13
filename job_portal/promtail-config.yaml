@@ -1,0 +1,17 @@
+server:
+  http_listen_address: 0.0.0.0
+  http_listen_port: 9090
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+positions:
+  filename: /tmp/positions.yaml
+scrape_configs:
+  - job_name: drf_logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: drf_logs
+          __path__: /home/neosoft/vishal/Django/Django_Rest_Framework/job-portal-api/job_portal/logs/api_log.log.*
